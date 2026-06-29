@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FiFARO 2026™ | Allocation Checker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --bg-primary: #030303;
+            --bg-secondary: #0c0d0e;
+            --accent-gold: #F5C453;
+            --accent-blue: #0066FF;
+            --accent-green: #00E676;
+            --text-light: #FFFFFF;
+            --text-muted: #8E94A0;
+            --border-color: #24262B;
+            --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-primary);
+            color: var(--text-light);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+        }
+
+        .ambient-canvas-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .app-view-container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+        }
+
+        .global-navigation-bar {
+            width: 100%;
+            padding: 20px 4%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-logo-text {
+            font-size: 1.4rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            text-decoration: none;
+        }
+
+        .brand-logo-text span {
+            color: var(--accent-gold);
+        }
+
+        .btn-navigation-link {
+            border: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.02);
+            color: var(--text-light);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-navigation-link:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .main-content-wrapper {
+            padding: 40px 4% 80px 4%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header-announcement-block {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header-tagline-text {
+            color: var(--accent-gold);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .header-title-text {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 900;
+        }
+
+        .checker-interactive-panel {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 40px 30px;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .input-label-text {
+            display: block;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            color: var(--text-light);
+            font-weight: 700;
+        }
+
+        .address-input-control {
+            width: 100%;
+            max-width: 600px;
+            background: #000000;
+            border: 2px solid var(--border-color);
+            padding: 16px;
+            border-radius: 4px;
+            color: var(--text-light);
+            font-size: 1rem;
+            font-family: monospace;
+            text-align: center;
+            transition: border-color 0.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .address-input-control:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+
+        .btn-action-trigger {
+            width: 100%;
+            max-width: 300px;
+            background: linear-gradient(90deg, var(--accent-gold) 0%, #C69B32 100%);
+            color: #000000;
+            border: none;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-action-trigger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 20px rgba(245, 196, 83, 0.3);
+        }
+
+        .status-output-wrapper {
+            margin-top: 30px;
+            display: none;
+            animation: panelFadeIn 0.4s ease forwards;
+        }
+
+        @keyframes panelFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-alert-card {
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: 6px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .status-alert-card.success-variant {
+            background: rgba(0, 230, 118, 0.05);
+            border: 2px solid var(--accent-green);
+        }
+
+        .status-alert-card.failure-variant {
+            background: rgba(255, 51, 51, 0.05);
+            border: 2px solid #FF3333;
+        }
+
+        .alert-headline-text {
+            font-size: 1.3rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .status-alert-card.success-variant .alert-headline-text { color: var(--accent-green); }
+        .status-alert-card.failure-variant .alert-headline-text { color: #FF3333; }
+
+        .alert-body-text {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .btn-redirect-link {
+            display: inline-block;
+            background: #FFFFFF;
+            color: #000000;
+            padding: 12px 30px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-redirect-link:hover {
+            opacity: 0.9;
+        }
+
+        .community-showcase-section {
+            border-top: 2px dashed var(--border-color);
+            padding-top: 50px;
+        }
+
+        .section-subtitle-text {
+            text-align: center;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 35px;
+            font-weight: 800;
+        }
+
+        .compact-responsive-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .showcase-item-card {
+            background: #111215;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: border-color 0.2s ease;
+        }
+
+        .showcase-item-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .showcase-thumbnail-frame {
+            width: 75px;
+            height: 75px;
+            border-radius: 6px;
+            border: 2px solid #000000;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .showcase-details-block {
+            flex-grow: 1;
+        }
+
+        .showcase-title-text {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            color: #FFFFFF;
+        }
+
+        .showcase-quota-text {
+            font-size: 0.8rem;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .global-footer-block {
+            background: #050505;
+            border-top: 2px solid var(--border-color);
+            padding: 40px 4% 30px 4%;
+            text-align: center;
+        }
+
+        .footer-logo-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .footer-logo-title span {
+            color: var(--accent-gold);
+        }
+
+        .footer-copyright-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.15);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .compact-responsive-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-title-text {
+                font-size: 2rem;
+            }
+            .checker-interactive-panel {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas class="ambient-canvas-background" id="ambientGraphicsCanvas"></canvas>
+
+    <div class="app-view-container">
+        <nav class="global-navigation-bar">
+            <a href="#" class="brand-logo-text">FiFARO <span>2026™</span></a>
+            <a href="https://x.com/FiFARO26" target="_blank" class="btn-navigation-link">Follow Update</a>
+        </nav>
+
+        <main class="main-content-wrapper">
+            <header class="header-announcement-block">
+                <span class="header-tagline-text">Status Verification</span>
+                <h1 class="header-title-text">Allocation Checker</h1>
+            </header>
+
+            <section class="checker-interactive-panel">
+                <form id="checkerSearchForm" onsubmit="executeLookupSequence(event)">
+                    <label class="input-label-text" for="inputWalletAddress">Enter EVM Wallet Address</label>
+                    <input type="text" id="inputWalletAddress" class="address-input-control" placeholder="0x..." required pattern="^0x[a-fA-F0-9]{40}$">
+                    <div>
+                        <button type="submit" class="btn-action-trigger" id="btnLookupTrigger">Check Status</button>
+                    </div>
+                </form>
+
+                <div class="status-output-wrapper" id="statusOutputWrapper">
+                    
+                    <div class="status-alert-card success-variant" id="successStatusCard" style="display: none;">
+                        <h3 class="alert-headline-text">Access Granted</h3>
+                        <p class="alert-body-text">Your address is registered for a Guaranteed Spot allocation record. Status verified successfully.</p>
+                    </div>
+
+                    <div class="status-alert-card failure-variant" id="failureStatusCard" style="display: none;">
+                        <h3 class="alert-headline-text">Not Registered</h3>
+                        <p class="alert-body-text">Your address is not listed in this allocation group. You can still secure a position by participating through the active portal channel.</p>
+                        <a href="https://fiaro2026.xyz/" class="btn-redirect-link">Join Open Allocation</a>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="community-showcase-section">
+                <h2 class="section-subtitle-text">Participating Roster Groups</h2>
+                
+                <div class="compact-responsive-grid">
+                    
+                    <div class="showcase-item-card">
+                        <img src="https://i.ibb.co.com/nsCVWhhS/NORMIES.jpg" alt="NORMIES" class="showcase-thumbnail-frame">
+                        <div class="showcase-details-block">
+                            <h4 class="showcase-title-text">NORMIES</h4>
+                            <p class="showcase-quota-text">Top 30 Holders Included</p>
+                        </div>
+                    </div>
+
+                    <div class="showcase-item-card">
+                        <img src="https://i.ibb.co.com/C3fKPpdm/Ok-Guy.jpg" alt="Ok Guy" class="showcase-thumbnail-frame">
+                        <div class="showcase-details-block">
+                            <h4 class="showcase-title-text">Ok Guy</h4>
+                            <p class="showcase-quota-text">Top 30 Holders Included</p>
+                        </div>
+                    </div>
+
+                    <div class="showcase-item-card">
+                        <img src="https://i.ibb.co.com/npNc601/NPC.jpg" alt="NPC" class="showcase-thumbnail-frame">
+                        <div class="showcase-details-block">
+                            <h4 class="showcase-title-text">NPC</h4>
+                            <p class="showcase-quota-text">Top 30 Holders Included</p>
+                        </div>
+                    </div>
+
+                    <div class="showcase-item-card">
+                        <img src="https://i.ibb.co.com/LzQsf6W1/Racerz.jpg" alt="Racerz" class="showcase-thumbnail-frame">
+                        <div class="showcase-details-block">
+                            <h4 class="showcase-title-text">Racerz</h4>
+                            <p class="showcase-quota-text">Top 30 Holders Included</p>
+                        </div>
+                    </div>
+
+                    <div class="showcase-item-card" style="grid-column: span 1; max-width: 100%;">
+                        <img src="https://i.ibb.co.com/xqZ7T968/Pi-XONA.jpg" alt="PiXONA" class="showcase-thumbnail-frame">
+                        <div class="showcase-details-block">
+                            <h4 class="showcase-title-text">PiXONA</h4>
+                            <p class="showcase-quota-text">Top 30 Holders Included</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <footer class="global-footer-block">
+            <div class="footer-logo-title">FiFARO <span>2026™</span></div>
+            <div class="footer-copyright-label">&copy; 2026 FiFARO 2026™. All Rights Reserved.</div>
+        </footer>
+    </div>
+
+    <script>
+        const DEPLOYMENT_WEB_APP_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+        const BACKDROP_IMAGE_ASSETS = [
+            "https://i.ibb.co.com/ymZQyHQX/2.jpg", "https://i.ibb.co.com/gZcs1Hj2/36.jpg", "https://i.ibb.co.com/Kxt386Cm/48.jpg",
+            "https://i.ibb.co.com/hJQ7JbTF/57.jpg", "https://i.ibb.co.com/tMW2JYRN/60.jpg", "https://i.ibb.co.com/BKzNNd35/74.jpg",
+            "https://i.ibb.co.com/3y7HTBP9/79.jpg", "https://i.ibb.co.com/hxvcg3RC/87.jpg", "https://i.ibb.co.com/9Hrcdg2k/110.jpg",
+            "https://i.ibb.co.com/ccZKr1wg/115.jpg", "https://i.ibb.co.com/0VswwdQT/133.jpg", "https://i.ibb.co.com/HTgZHvMs/176.jpg",
+            "https://i.ibb.co.com/RGMCTrmJ/157.jpg", "https://i.ibb.co.com/JwCDghWY/167.jpg", "https://i.ibb.co.com/Txfjsm8b/163.jpg",
+            "https://i.ibb.co.com/JWn2pcYj/193.jpg", "https://i.ibb.co.com/27twZkJR/218.jpg", "https://i.ibb.co.com/m5vG7Dg5/247.jpg",
+            "https://i.ibb.co.com/xqv8rpfH/307.jpg", "https://i.ibb.co.com/6JDtJ54N/348.jpg"
+        ];
+
+        const canvasElement = document.getElementById('ambientGraphicsCanvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        let preloadedImagesArray = [];
+        let driftingItemsPool = [];
+
+        function preLoadImageAssets() {
+            let loadedCount = 0;
+            BACKDROP_IMAGE_ASSETS.forEach(url => {
+                const img = new Image();
+                img.src = url;
+                img.onload = () => {
+                    preloadedImagesArray.push(img);
+                    loadedCount++;
+                    if (loadedCount === BACKDROP_IMAGE_ASSETS.length) {
+                        spawnDriftingItems();
+                    }
+                };
+            });
+        }
+
+        function resizeCanvasViewPort() {
+            canvasElement.width = window.innerWidth;
+            canvasElement.height = window.innerHeight;
+        }
+
+        function spawnDriftingItems() {
+            driftingItemsPool = [];
+            for (let i = 0; i < 15; i++) {
+                driftingItemsPool.push({
+                    img: preloadedImagesArray[Math.floor(Math.random() * preloadedImagesArray.length)],
+                    x: Math.random() * canvasElement.width,
+                    y: Math.random() * canvasElement.height,
+                    size: Math.random() * 40 + 50, 
+                    vx: (Math.random() * 0.4 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
+                    vy: (Math.random() * 0.4 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
+                    opacity: Math.random() * 0.15 + 0.05
+                });
+            }
+        }
+
+        function animateDriftLoop() {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            canvasCtx.fillStyle = '#030303';
+            canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+
+            driftingItemsPool.forEach(item => {
+                if (!item.img) return;
+                canvasCtx.save();
+                canvasCtx.globalAlpha = item.opacity;
+                canvasCtx.shadowColor = '#000000';
+                canvasCtx.shadowBlur = 10;
+                
+                canvasCtx.drawImage(item.img, item.x, item.y, item.size, item.size);
+                canvasCtx.restore();
+
+                item.x += item.vx;
+                item.y += item.vy;
+
+                if (item.x < -item.size) item.x = canvasElement.width;
+                if (item.x > canvasElement.width) item.x = -item.size;
+                if (item.y < -item.size) item.y = canvasElement.height;
+                if (item.y > canvasElement.height) item.y = -item.size;
+            });
+
+            requestAnimationFrame(animateDriftLoop);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            resizeCanvasViewPort();
+            window.addEventListener('resize', () => {
+                resizeCanvasViewPort();
+                if (preloadedImagesArray.length === BACKDROP_IMAGE_ASSETS.length) {
+                    spawnDriftingItems();
+                }
+            });
+            preLoadImageAssets();
+            animateDriftLoop();
+        });
+
+        function executeLookupSequence(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('inputWalletAddress').value.trim().toLowerCase();
+            const wrapper = document.getElementById('statusOutputWrapper');
+            const successCard = document.getElementById('successStatusCard');
+            const failureCard = document.getElementById('failureStatusCard');
+            const actionBtn = document.getElementById('btnLookupTrigger');
+
+            wrapper.style.display = 'none';
+            successCard.style.display = 'none';
+            failureCard.style.display = 'none';
+
+            if (!/^0x[a-fA-F0-9]{40}$/.test(inputVal)) {
+                alert("Invalid address validation standard.");
+                return;
+            }
+
+            actionBtn.disabled = true;
+            actionBtn.innerText = "Searching...";
+
+            if (DEPLOYMENT_WEB_APP_URL === "YOUR_APPS_SCRIPT_URL_HERE") {
+                setTimeout(() => {
+                    actionBtn.disabled = false;
+                    actionBtn.innerText = "Check Status";
+                    failureCard.style.display = 'block';
+                    wrapper.style.display = 'block';
+                }, 800);
+                return;
+            }
+
+            fetch(`${DEPLOYMENT_WEB_APP_URL}?address=${inputVal}`)
+            .then(res => res.json())
+            .then(data => {
+                actionBtn.disabled = false;
+                actionBtn.innerText = "Check Status";
+                wrapper.style.display = 'block';
+                
+                if (data.registered === true) {
+                    successCard.style.display = 'block';
+                } else {
+                    failureCard.style.display = 'block';
+                }
+            })
+            .catch(() => {
+                actionBtn.disabled = false;
+                actionBtn.innerText = "Check Status";
+                alert("Data sync error detected.");
+            });
+        }
+    </script>
+</body>
+</html>
